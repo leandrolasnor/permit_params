@@ -130,41 +130,6 @@ end
 | `PermitParams::Error`                  | `expect:` usado em uma versão de Rails sem `Parameters#expect` (< 8.0).|
 | `ActionController::ParameterMissing`   | Chave obrigatória ausente (`required`/`expect`).                       |
 
-## Migrando do `BaseController`
-
-Antes (implementação manual):
-
-```ruby
-class BaseController < ApplicationController
-  class_attribute :param_schemas, default: {}
-
-  class << self
-    def permit_params(action, schema)
-      param_schemas[action.to_sym] = schema
-    end
-  end
-
-  private
-
-  def params
-    schema = self.class.param_schemas[action_name.to_sym]
-    return super unless schema
-    # ...
-  end
-end
-```
-
-Depois (com a gem instalada, o `BaseController` pode ficar vazio ou ser removido):
-
-```ruby
-class BaseController < ApplicationController
-end
-```
-
-> Bônus: a implementação manual mutava o mesmo Hash compartilhado entre todos
-> os controllers (schemas vazavam de um controller para o outro). A gem usa
-> `merge`, então cada controller tem seu próprio conjunto de schemas.
-
 ## Requisitos
 
 - Ruby >= 3.1
