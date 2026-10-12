@@ -178,6 +178,56 @@ bundle install
 bundle exec rspec
 ```
 
+### Bump de versão
+
+O bump usa a gem [`gem-release`](https://github.com/svenfuchs/gem-release):
+
+```bash
+gem bump --version patch   # 0.1.0 -> 0.1.1
+gem bump --version minor   # 0.1.0 -> 0.2.0
+gem bump --version major   # 0.1.0 -> 1.0.0
+```
+
+Por padrão o bump reescreve `lib/permit_params/version.rb`, faz **commit** da
+mudança e **não** faz push nem tag.
+
+O comando `gem bump --version patch --tag --push` faz tudo em sequência:
+bump, commit (só do `version.rb`), push do commit, cria a tag anotada
+`v<versão>` (a partir da versão do `version.rb`) e faz push das tags. Como a
+tag `v*` é enviada, **isso dispara a release**.
+
+> ⚠️ A árvore do git precisa estar **limpa** antes de rodar o bump (ele aborta
+> com "Uncommitted changes found"). Como o bump só faz `git add` do
+> `version.rb`, o `CHANGELOG.md` precisa já estar commitado — por isso, escreva
+> a seção da nova versão e commite antes.
+
+Para saber a próxima versão sem alterar nada:
+
+```bash
+gem bump --pretend --no-commit | awk '{ print $4 }'   # -> 0.1.1
+```
+
+Fluxo recomendado (o `CHANGELOG.md` precisa estar commitado antes do bump):
+
+```bash
+# 1) escreva a seção da nova versão no CHANGELOG.md e commite tudo
+git add .
+git commit -m "Prepare 0.1.1"
+
+# 2) bump + tag + push (dispara a release) usando a versão explícita
+gem bump --version 0.1.1 --tag --push
+```
+
+Alternativa com mais controle (separa o push do código da release):
+
+```bash
+gem bump --version patch --no-commit        # só edita o version.rb
+git add lib/permit_params/version.rb CHANGELOG.md
+git commit -m "Prepare 0.1.1"
+git push origin main                        # sem release
+gem tag --push                              # cria v0.1.1 e empurra -> dispara a release
+```
+
 ## Licença
 
 MIT.
