@@ -1,0 +1,45 @@
+name: Release
+
+# Publica a gem no RubyGems.org via Trusted Publishing (OIDC), sem API keys.
+#
+# Pré-requisitos:
+#   1. Configure o trusted publisher em https://rubygems.org/profile/trusted_publishers
+#      apontando para este repositório, o workflow "release.yml" e o environment "release".
+#   2. Crie um environment "release" no GitHub (Settings > Environments).
+#
+# Para publicar: crie a tag e faça push.
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# A action roda `rake release` (bundler/gem_tasks): build + push da gem + release
+# no GitHub. O trigger por tag está de acordo com o guia oficial:
+# https://guides.rubygems.org/trusted-publishing
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # necessário para o `rake release` criar/pushar a tag
+      id-token: write # obrigatório para o Trusted Publishing
+
+    # Se você configurou um environment no RubyGems, use o mesmo nome aqui.
+    environment: release
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          ruby-version: ruby
+
+      - uses: rubygems/release-gem@v1
