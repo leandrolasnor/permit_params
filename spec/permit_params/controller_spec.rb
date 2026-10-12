@@ -61,6 +61,19 @@ RSpec.describe PermitParams::Controller do
     end
   end
 
+  describe "when the request params are empty" do
+    let(:controller_class) do
+      Class.new(FakeController) do
+        permit_params(:show, permit: [:id])
+      end
+    end
+    let(:request_params) { {} }
+
+    it "returns empty parameters" do
+      expect(filtered_params.keys).to be_empty
+    end
+  end
+
   describe "required + permit schema" do
     let(:controller_class) do
       Class.new(FakeController) do
@@ -140,6 +153,24 @@ RSpec.describe PermitParams::Controller do
       Class.new(FakeController) { permit_params(:show, permit: [:a]) }
 
       expect(FakeController.param_schemas).to eq({})
+    end
+  end
+
+  describe "schema declaration" do
+    it "matches the action whether it is declared with a Symbol or a String" do
+      controller_class = Class.new(FakeController) { permit_params("show", permit: [:id]) }
+
+      expect(controller_class.new(:show, { id: "1", evil: "x" }).send(:params).keys)
+        .to contain_exactly("id")
+    end
+
+    it "lets a later declaration override an earlier one for the same action" do
+      controller_class = Class.new(FakeController) do
+        permit_params(:show, permit: [:a])
+        permit_params(:show, permit: [:b])
+      end
+
+      expect(controller_class.param_schemas[:show]).to eq(permit: [:b])
     end
   end
 

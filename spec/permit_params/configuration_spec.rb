@@ -35,6 +35,43 @@ RSpec.describe PermitParams::Configuration do
     end
   end
 
+  describe "default_schema as a bare Array (shorthand)" do
+    let(:controller) { Class.new(FakeController).new(:show, { page: "2", evil: "x" }) }
+
+    before do
+      PermitParams.configure { |config| config.default_schema = [:page] }
+    end
+
+    it "normalizes the shorthand before applying it" do
+      expect(controller.send(:params).keys).to contain_exactly("page")
+    end
+  end
+
+  describe "default_schema with a required key" do
+    let(:controller) { Class.new(FakeController).new(:create, { hero: { name: "A", evil: "x" } }) }
+
+    before do
+      PermitParams.configure { |config| config.default_schema = { required: :hero, permit: [:name] } }
+    end
+
+    it "unwraps the required key and permits its nested attributes" do
+      expect(controller.send(:params).keys).to contain_exactly("name")
+    end
+  end
+
+  describe "own schema takes precedence over default_schema" do
+    let(:controller_class) { Class.new(FakeController) { permit_params(:show, permit: [:id]) } }
+    let(:controller) { controller_class.new(:show, { id: "1", page: "2", evil: "x" }) }
+
+    before do
+      PermitParams.configure { |config| config.default_schema = { permit: [:page] } }
+    end
+
+    it "applies the action schema instead of the default one" do
+      expect(controller.send(:params).keys).to contain_exactly("id")
+    end
+  end
+
   describe "raise_on_missing_schema" do
     let(:controller) { Class.new(FakeController).new(:show, {}) }
 
@@ -53,6 +90,13 @@ RSpec.describe PermitParams::Configuration do
       PermitParams.reset_configuration!
 
       expect(PermitParams.configuration.raise_on_missing_schema).to be(false)
+    end
+
+    it "clears the default schema" do
+      PermitParams.configure { |config| config.default_schema = { permit: [:id] } }
+      PermitParams.reset_configuration!
+
+      expect(PermitParams.configuration.default_schema).to be_nil
     end
   end
 end
