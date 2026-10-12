@@ -94,19 +94,27 @@ RSpec.describe PermitParams::Controller do
     end
     let(:action) { :update }
 
-    context "when the expected params are present" do
-      let(:request_params) { { hero: { id: "1", name: "A", rank: "S", evil: "x" } } }
+    # +expect+ is only available on Rails >= 8.0, so the same schema is
+    # exercised differently depending on the installed Action Pack version.
+    if ActionController::Parameters.method_defined?(:expect)
+      context "when the expected params are present" do
+        let(:request_params) { { hero: { id: "1", name: "A", rank: "S", evil: "x" } } }
 
-      it "returns the expected nested keys unwrapped" do
-        expect(filtered_params.keys).to contain_exactly("id", "name", "rank")
+        it "returns the expected nested keys unwrapped" do
+          expect(filtered_params.keys).to contain_exactly("id", "name", "rank")
+        end
       end
-    end
 
-    context "when the expected params are missing" do
-      let(:request_params) { {} }
+      context "when the expected params are missing" do
+        let(:request_params) { {} }
 
-      it "raises ActionController::ParameterMissing" do
-        expect { filtered_params }.to raise_error(ActionController::ParameterMissing)
+        it "raises ActionController::ParameterMissing" do
+          expect { filtered_params }.to raise_error(ActionController::ParameterMissing)
+        end
+      end
+    else
+      it "raises PermitParams::Error on Rails < 8.0" do
+        expect { filtered_params }.to raise_error(PermitParams::Error, /Rails >= 8\.0/)
       end
     end
   end
